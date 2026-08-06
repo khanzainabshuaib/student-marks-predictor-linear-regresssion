@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Performance AI Analytics</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: #090d16;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            padding: 30px 0;
+        }
+        .dashboard-card {
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 24px;
+            box-shadow: 0 0 50px rgba(14, 165, 233, 0.15);
+            padding: 35px;
+        }
+        .metric-card {
+            background: #1f2937;
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid #374151;
+            transition: all 0.3s ease;
+        }
+        .metric-card:hover {
+            border-color: #38bdf8;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+        }
+        .btn-neon {
+            background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+            border: none;
+            color: white;
+            font-weight: 700;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+            transition: all 0.3s;
+        }
+        .btn-neon:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.7);
+            color: white;
+        }
+        .accent-text {
+            color: #38bdf8;
+        }
+        .badge-status {
+            font-size: 0.9rem;
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-11">
+            <div class="dashboard-card">
+                
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
+                    <div>
+                        <h3 class="fw-bold m-0"><i class="fa-solid fa-brain accent-text me-2"></i>Student Performance AI</h3>
+                        <small class="text-secondary">Predictive Analytics & Performance Diagnostic</small>
+                    </div>
+                    <span id="ai-status" class="badge-status accent-text"><i class="fa-solid fa-bolt me-1"></i> Realtime AI Sync</span>
+                </div>
+
+                <div class="row">
+                    <!-- Left: Control Sliders -->
+                    <div class="col-lg-5 pe-lg-4 border-end border-secondary">
+                        <h5 class="text-uppercase text-secondary fs-6 mb-3">Input Parameters</h5>
+                        
+                        <!-- Study Hours -->
+                        <div class="metric-card mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold"><i class="fa-solid fa-book-open text-info me-2"></i>Study Hours</span>
+                                <span id="study-val" class="accent-text fw-bold fs-5">5.0 hrs</span>
+                            </div>
+                            <input type="range" class="form-range" id="study_hours" min="0" max="14" step="0.5" value="5" oninput="updateDashboard()">
+                        </div>
+
+                        <!-- Attendance -->
+                        <div class="metric-card mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold"><i class="fa-solid fa-user-check text-success me-2"></i>Attendance</span>
+                                <span id="att-val" class="accent-text fw-bold fs-5">80%</span>
+                            </div>
+                            <input type="range" class="form-range" id="attendance" min="30" max="100" value="80" oninput="updateDashboard()">
+                        </div>
+
+                        <!-- Sleep Hours -->
+                        <div class="metric-card mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold"><i class="fa-solid fa-moon text-warning me-2"></i>Sleep Hours</span>
+                                <span id="sleep-val" class="accent-text fw-bold fs-5">7.0 hrs</span>
+                            </div>
+                            <input type="range" class="form-range" id="sleep_hours" min="3" max="12" step="0.5" value="7" oninput="updateDashboard()">
+                        </div>
+
+                        <button class="btn btn-neon w-100 py-3" onclick="predictMarks()">
+                            <i class="fa-solid fa-rotate me-2"></i> Recalculate Performance
+                        </button>
+                    </div>
+
+                    <!-- Right: Visualizations & Output -->
+                    <div class="col-lg-7 ps-lg-4 mt-4 mt-lg-0 d-flex flex-column justify-content-between">
+                        
+                        <div class="row text-center align-items-center">
+                            <!-- Circular Gauge Chart for Score -->
+                            <div class="col-md-6">
+                                <div style="position: relative; height:200px; width:200px; margin: 0 auto;">
+                                    <canvas id="gaugeChart"></canvas>
+                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                                        <div id="score-text" class="fw-bold fs-2">0%</div>
+                                        <small class="text-secondary">Expected Score</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Performance Badge & Status -->
+                            <div class="col-md-6 text-md-start text-center mt-3 mt-md-0">
+                                <small class="text-uppercase text-secondary">Predicted Grade</small>
+                                <h2 id="grade-text" class="fw-bold my-1">--</h2>
+                                <p id="advice-text" class="text-secondary small">Adjust sliders to see impact on final grade.</p>
+                            </div>
+                        </div>
+
+                        <!-- Bar Chart: Impact Distribution -->
+                        <div class="mt-4 p-3 style="background: #1f2937; border-radius: 16px;">
+                            <h6 class="text-secondary mb-3"><i class="fa-solid fa-chart-column me-2"></i>Factor Contribution Breakdown</h6>
+                            <div style="height: 140px;">
+                                <canvas id="impactChart"></canvas>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let gaugeChart, impactChart;
+
+function initCharts() {
+    // Gauge Chart setup
+    const ctxGauge = document.getElementById('gaugeChart').getContext('2d');
+    gaugeChart = new Chart(ctxGauge, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [0, 100],
+                backgroundColor: ['#38bdf8', '#374151'],
+                borderWidth: 0,
+                circumference: 260,
+                rotation: 230
+            }]
+        },
+        options: { cutout: '80%', responsive: true, maintainAspectRatio: false, plugins: { tooltip: { enabled: false } } }
+    });
+
+    // Bar Chart setup
+    const ctxImpact = document.getElementById('impactChart').getContext('2d');
+    impactChart = new Chart(ctxImpact, {
+        type: 'bar',
+        data: {
+            labels: ['Study Impact', 'Attendance Impact', 'Sleep Bonus'],
+            datasets: [{
+                data: [0, 0, 0],
+                backgroundColor: ['#06b6d4', '#10b981', '#f59e0b'],
+                borderRadius: 8
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { display: false },
+                y: { ticks: { color: '#9ca3af', font: { size: 11 } }, grid: { display: false } }
+            }
+        }
+    });
+}
+
+function updateDashboard() {
+    const study = parseFloat(document.getElementById('study_hours').value);
+    const att = parseFloat(document.getElementById('attendance').value);
+    const sleep = parseFloat(document.getElementById('sleep_hours').value);
+
+    document.getElementById('study-val').innerText = study.toFixed(1) + " hrs";
+    document.getElementById('att-val').innerText = att + "%";
+    document.getElementById('sleep-val').innerText = sleep.toFixed(1) + " hrs";
+
+    // Chart live data calculation for factors
+    impactChart.data.datasets[0].data = [study * 8, att * 0.5, sleep * 3];
+    impactChart.update();
+
+    predictMarks();
+}
+
+async function predictMarks() {
+    const study_hours = document.getElementById('study_hours').value;
+    const attendance = document.getElementById('attendance').value;
+    const sleep_hours = document.getElementById('sleep_hours').value;
+
+    try {
+        const response = await fetch('/predict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ study_hours, attendance, sleep_hours })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            const numericScore = parseFloat(data.marks);
+
+            // Update Gauge Chart
+            gaugeChart.data.datasets[0].data = [numericScore, 100 - numericScore];
+            gaugeChart.data.datasets[0].backgroundColor[0] = data.color;
+            gaugeChart.update();
+
+            // Update UI Text
+            const scoreText = document.getElementById('score-text');
+            scoreText.innerText = data.marks;
+            scoreText.style.color = data.color;
+
+            const gradeText = document.getElementById('grade-text');
+            gradeText.innerText = data.grade;
+            gradeText.style.color = data.color;
+
+            // Advice Logic
+            const advice = document.getElementById('advice-text');
+            if(parseFloat(study_hours) < 3) {
+                advice.innerText = "⚠️ High Risk! Increase study hours to boost score.";
+            } else if(parseFloat(sleep_hours) < 6) {
+                advice.innerText = "😴 Sleep deprivation may reduce focus and performance.";
+            } else {
+                advice.innerText = "🔥 Great balance! Keep up the consistent effort.";
+            }
+        }
+    } catch (err) {
+        console.error("Prediction failed", err);
+    }
+}
+
+window.onload = function() {
+    initCharts();
+    updateDashboard();
+};
+</script>
+
+</body>
+</html>
